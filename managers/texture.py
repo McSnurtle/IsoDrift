@@ -1,7 +1,7 @@
 # Texture Manager - Mc_snurtle
 # imports
-import pygame
-pygame.init()
+import os
+from PIL import Image
 
 
 class Textures(dict):
@@ -9,65 +9,66 @@ class Textures(dict):
     def __init__(self, screen):
         
         self.screen = screen
+        self.image_dir = os.path.join(os.path.abspath(os.path.join(os.path.abspath(os.path.join(__file__, os.pardir)), os.pardir)), 'res')
         
         self.car = {
             'car': {
-                'car-w': pygame.image.load('res/car-W.png').convert_alpha(),
-                'car-sw': pygame.image.load('res/car-SW.png').convert_alpha(),
-                'car-s': pygame.image.load('res/car-S.png').convert_alpha(),
-                'car-se': pygame.image.load('res/car-SE.png').convert_alpha(),
-                'car-e': pygame.image.load('res/car-E.png').convert_alpha(),
-                'car-ne': pygame.image.load('res/car-NE.png').convert_alpha(),
-                'car-n': pygame.image.load('res/car-N.png').convert_alpha(),
-                'car-nw': pygame.image.load('res/car-NW.png').convert_alpha()
+                'car-w': PNG(os.path.join(self.image_dir, 'car-W.png')),
+                'car-sw': PNG(os.path.join(self.image_dir, 'car-SW.png')),
+                'car-s': PNG(os.path.join(self.image_dir, 'car-S.png')),
+                'car-se': PNG(os.path.join(self.image_dir, 'car-SE.png')),
+                'car-e': PNG(os.path.join(self.image_dir, 'car-E.png')),
+                'car-ne': PNG(os.path.join(self.image_dir, 'car-NE.png')),
+                'car-n': PNG(os.path.join(self.image_dir, 'car-N.png')),
+                'car-nw': PNG(os.path.join(self.image_dir, 'car-NW.png'))
                 },
             'jeep': {
-                'jeep-w': pygame.image.load('res/jeep-W.png').convert_alpha(),
-                'jeep-sw': pygame.image.load('res/jeep-SW.png').convert_alpha,
-                'jeep-s': pygame.image.load('res/jeep-S.png').convert_alpha(),
-                'jeep-se': pygame.image.load('res/jeep-SE.png').convert_alpha(),
-                'jeep-e': pygame.image.load('res/jeep-E.png').convert_alpha(),
-                'jeep-ne': pygame.image.load('res/jeep-NE.png').convert_alpha(),
-                'jeep-n': pygame.image.load('res/jeep-N.png').convert_alpha(),
-                'jeep-nw': pygame.image.load('res/jeep-NW.png').convert_alpha()
+                'jeep-w': PNG(os.path.join(self.image_dir, 'jeep-W.png')),
+                'jeep-sw': PNG(os.path.join(self.image_dir, 'jeep-SW.png')),
+                'jeep-s': PNG(os.path.join(self.image_dir, 'jeep-S.png')),
+                'jeep-se': PNG(os.path.join(self.image_dir, 'jeep-SE.png')),
+                'jeep-e': PNG(os.path.join(self.image_dir, 'jeep-E.png')),
+                'jeep-ne': PNG(os.path.join(self.image_dir, 'jeep-NE.png')),
+                'jeep-n': PNG(os.path.join(self.image_dir, 'jeep-N.png')),
+                'jeep-nw': PNG(os.path.join(self.image_dir, 'jeep-NW.png'))
                 }
             }
         self.tile = {
             'transitions': {
-                'grass_blend': pygame.image.load('res/tile/grass_blend.png').convert_alpha(),
-                'grass_blend-side': pygame.image.load('res/tile/grass_blend-angle.png').convert_alpha(),
-                'dirt_blend-side': pygame.image.load('res/tile/dirt_blend-side.png').convert_alpha(),
-                'dirt_blend-top': pygame.image.load('res/tile/dirt_blend-top.png').convert_alpha(),
-                'dirt_blend-top-flip': pygame.image.load('res/tile/dirt_blend-top-flip.png').convert_alpha(),
-                'dirt_blend-side-flip': pygame.image.load('res/tile/dirt_blend-side-flip.png').convert_alpha(),
+                'grass_blend': PNG(os.path.join(self.image_dir, 'tile', 'grass_blend.png')),
+                'grass_blend-side': PNG(os.path.join(self.image_dir, 'tile', 'grass_blend-angle.png')),
+                'dirt_blend-side': PNG(os.path.join(self.image_dir, 'tile', 'dirt_blend-side.png')),
+                'dirt_blend-top': PNG(os.path.join(self.image_dir, 'tile', 'dirt_blend-top.png')),
+                'dirt_blend-top-flip': PNG(os.path.join(self.image_dir, 'tile', 'dirt_blend-top-flip.png')),
+                'dirt_blend-side-flip': PNG(os.path.join(self.image_dir, 'tile', 'dirt_blend-side-flip.png')),
                 },
             'animations': {
-                'water': [pygame.image.load('res/tile/water1.png').convert(),
-                          pygame.image.load('res/tile/water2.png').convert(),
-                          pygame.image.load('res/tile/water3.png').convert(),
-                          pygame.image.load('res/tile/water4.png').convert(),
-                          pygame.image.load('res/tile/water5.png').convert()
+                'water': [PNG(os.path.join(self.image_dir, 'tile', 'water1.png')),
+                          PNG(os.path.join(self.image_dir, 'tile', 'water2.png')),
+                          PNG(os.path.join(self.image_dir, 'tile', 'water3.png')),
+                          PNG(os.path.join(self.image_dir, 'tile', 'water4.png')),
+                          PNG(os.path.join(self.image_dir, 'tile', 'water5.png'))
                           ],
                 'grass_blades': {
                     'grass1': None,
                     },
                 },
             'textures': {    
-                'grass': pygame.image.load('res/tile/grass-64.png').convert(),
-                'grass-side': pygame.image.load('res/tile/grass-side-64.png').convert(),
-                'dirt': pygame.image.load('res/tile/dirt-64.png').convert(),
-                'road': pygame.image.load('res/tile/road-64.png').convert(),
-                'hill': pygame.image.load('res/tile/hill.png').convert_alpha(),
-                'boulder': pygame.image.load('res/tile/boulder-64.png').convert_alpha()
+                'grass': PNG(os.path.join(self.image_dir, 'tile', 'grass-64.png')),
+                'grass-side': PNG(os.path.join(self.image_dir, 'tile', 'grass-side-64.png')),
+                'dirt': PNG(os.path.join(self.image_dir, 'tile', 'dirt-64.png')),
+                'road': PNG(os.path.join(self.image_dir, 'tile', 'road-64.png')),
+                'hill': PNG(os.path.join(self.image_dir, 'tile', 'hill.png')),
+                'boulder': PNG(os.path.join(self.image_dir, 'tile', 'boulder-64.png'))
                 }
             }
         self.gui = {
             'gauge': {
-                'background': pygame.image.load('res/gauge/gauge-clean.png').convert_alpha(),
-                'speed_needle': pygame.image.load('res/gauge/speed_needle.png').convert_alpha(),
-                'vector_needle': pygame.image.load('res/gauge/raw_speed_needle.png').convert_alpha(),
-                'steer_needle': pygame.image.load('res/gauge/steer_needle.png').convert_alpha(),
-                'drift_needle': pygame.image.load('res/gauge/drift_needle.png').convert_alpha()
+                'background': PNG(os.path.join(self.image_dir, 'gauge', 'gauge-clean.png')),
+                'speed_needle': PNG(os.path.join(self.image_dir, 'gauge', 'speed_needle.png')),
+                'vector_needle': PNG(os.path.join(self.image_dir, 'gauge', 'raw_speed_needle.png')),
+                'steer_needle': PNG(os.path.join(self.image_dir, 'gauge', 'steer_needle.png')),
+                'drift_needle': PNG(os.path.join(self.image_dir, 'gauge', 'drift_needle.png'))
                 },
             'menu': {
                 'backgrounds': {
@@ -75,3 +76,23 @@ class Textures(dict):
                     }
                 }    
             }
+
+
+class PNG:
+
+    def __init__(self, path: str):
+
+        self.path = path
+        self.image = Image.open(self.path)
+
+    def get_width(self):
+        return self.image.width
+
+    def get_height(self):
+        return self.image.height
+
+    def get_size(self):
+        return (self.get_width(), self.get_height())
+
+    def copy(self):
+        return self

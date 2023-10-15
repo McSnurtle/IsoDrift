@@ -1,15 +1,13 @@
 # imports
-from calendar import c
 import math
 import json
-import numpy as np
-from managers.texture import Textures
 from managers.animation import AnimManager
 from managers.map import MapLoader
+from managers.texture import Textures
+from graphics.surface import Renderer
 
-import pygame
-pygame.init()
-pygame.joystick.init()
+import keyboard
+import asyncio
 
 
 class SkidManager:
@@ -49,15 +47,14 @@ class SkidManager:
         return self.skid_marks
 
 
-class Screen(pygame.Surface):
+class Screen:
     
     def __init__(self, width, height):
-    
-        super().__init__((width, height))
+        
         self.width, self.height = width, height
-        self.clock = pygame.time.Clock()
+        self.clock = Renderer.Clock()
         self.running = True
-        self.screen = pygame.display.set_mode((self.width, self.height))
+        self.screen = Renderer(width, height, "RGB")
         
         self.car_name = 'car'
         self.skid_manager = SkidManager(150)
@@ -77,13 +74,10 @@ class Screen(pygame.Surface):
         self.gauge_padding = 20
         self.gauge_x = self.gauge_padding
         self.gauge_y = self.height - self.textures.gui['gauge']['background'].get_height() - self.gauge_padding
-        self.speedometer_rect = pygame.Rect(self.gauge_x, self.gauge_y, self.textures.gui['gauge']['background'].get_width(), self.textures.gui['gauge']['background'].get_height())
-        
+        self.speedometer_rect = self.screen.load_image(path=self.textures.gui['gauge']['background'].path)
+
         # Controller properties
-        self.joystick = None
-        if pygame.joystick.get_count() != 0:        # If there are more than 0 controllers connected
-            self.joystick = pygame.joystick.Joystick(0) # Use the first one that is
-            self.joystick.init()
+        # ADD VANILLA PYTHON LOGIC
 
         # Car properties
         self.car_mirror = self.textures.car['car']['car-e'].copy()
@@ -119,16 +113,17 @@ class Screen(pygame.Surface):
         self.WATER_FRICTION = 50.0
         self.WATER_SPEED = 1.0
 
-    def run(self):
+    async def run(self):
+        asyncio.create_task(self.keyboard_listener())
+
         while self.running:
             self.event_handler()
             self.update()
             self.draw()
-
-            pygame.display.flip()
+            
             self.clock.tick(75)
 
-    def event_handler(self):
+    async def event_handler(self):
         
         # Before any calculations, check the material
         tile_x = int(self.CAR_X // self.tile_width)
@@ -159,11 +154,6 @@ class Screen(pygame.Surface):
             self.TOP_MOM = self.GRASS_SPEED
 
         # Controller event listener
-        
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                self.running = False
-                pygame.joystick.quit()
                 
         if self.joystick is not None:
 
@@ -187,12 +177,13 @@ class Screen(pygame.Surface):
                 self.CAR_SPEED += (rt_axis + 1.0) / 12.0
             else:
                 self.CAR_SPEED -= self.MOM_DECAY * 5.0
-
+                
+    async def keyboard_listener(self):
         # Keyboard event listener
-        elif self.joystick is None:
-            keys = pygame.key.get_pressed()
+        if self.joystick is None:
+            keys = keyboard.read_event()
 
-            if keys[pygame.K_a] and self.CAR_SPEED > 0.5:
+            if keys.event_type == keyboard.W and self.CAR_SPEED > 0.5:
                 self.CAR_ANGLE -= 3
                 if self.DRIFT_ANGLE < 0:
                     self.DRIFT_ANGLE += 5.0
@@ -293,7 +284,7 @@ class Screen(pygame.Surface):
         # grass_rect = pygame.Rect(1, 1, self.width - 1, self.height - 1)
         # texture = pygame.transform.scale(self.tile_textures['grass'], (self.width, self.height))
         # self.screen.blit(texture, grass_rect)  # Fill the screen surface with the background color
-        self.screen.fill((0, 0, 0))
+        self.screen.update()
 
         self.draw_tiles()
 
@@ -325,12 +316,12 @@ class Screen(pygame.Surface):
         for y, row in enumerate(self.map.LAYOUT):
             for x, tile in enumerate(row):
                 if 0 <= y * self.tile_height >= self.camera_y - self.tile_height and 0 <= x * self.tile_width >= self.camera_x - self.tile_width:
-                    tile_rect = pygame.Rect(x * self.tile_width - self.camera_x, y * self.tile_height - self.camera_y, self.tile_width, self.tile_height)
+                    tile_rect = (x * self.tile_width - self.camera_x, y * self.tile_height - self.camera_y, self.tile_width, self.tile_height)
 
                     if tile == '#':  # Road tile
                         decoration = None
-                        color =  self.textures.tile['textures']['road']
-                        color = pygame.transform.rotate(color, 90)
+                        color =  self.textures.tile['textures']['road'].path
+                        color = self.screen.rotate_image(color, 90)
                     elif tile == '@':   # Dirt tile
                         decoration = None
                         color = self.textures.tile['textures']['dirt']
@@ -423,4 +414,4 @@ class Screen(pygame.Surface):
 if __name__ == '__main__':
     screen = Screen(2560//2, 1440//2)
 
-    screen.run()
+    asyncio.run(screen.run())
