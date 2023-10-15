@@ -81,7 +81,7 @@ class Screen(pygame.Surface):
         
         # Controller properties
         self.joystick = None
-        if pygame.joystick.get_count() is not 0:        # If there are more than 0 controllers connected
+        if pygame.joystick.get_count() != 0:        # If there are more than 0 controllers connected
             self.joystick = pygame.joystick.Joystick(0) # Use the first one that is
             self.joystick.init()
 
