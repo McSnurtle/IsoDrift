@@ -42,11 +42,11 @@ class Textures(dict):
                 'dirt_blend-side-flip': pygame.image.load('res/tile/dirt_blend-side-flip.png').convert_alpha(),
                 },
             'animations': {
-                'water': [pygame.image.load('res/tile/water1.png').convert(),
-                          pygame.image.load('res/tile/water2.png').convert(),
-                          pygame.image.load('res/tile/water3.png').convert(),
-                          pygame.image.load('res/tile/water4.png').convert(),
-                          pygame.image.load('res/tile/water5.png').convert()
+                'water': [pygame.image.load('res/tile/water1-128.png').convert(),
+                          pygame.image.load('res/tile/water2-128.png').convert(),
+                          pygame.image.load('res/tile/water3-128.png').convert(),
+                          pygame.image.load('res/tile/water4-128.png').convert(),
+                          pygame.image.load('res/tile/water5-128.png').convert()
                           ],
                 'grass_blades': {
                     'grass1': None,
@@ -54,10 +54,8 @@ class Textures(dict):
                 },
             'textures': {    
                 'grass': pygame.image.load('res/tile/grass-64.png').convert(),
-                'grass-side': pygame.image.load('res/tile/grass-side-64.png').convert(),
                 'dirt': pygame.image.load('res/tile/dirt-64.png').convert(),
                 'road': pygame.image.load('res/tile/road-64.png').convert(),
-                'hill': pygame.image.load('res/tile/hill.png').convert_alpha(),
                 'boulder': pygame.image.load('res/tile/boulder-64.png').convert_alpha()
                 }
             }

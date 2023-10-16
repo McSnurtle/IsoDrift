@@ -1,8 +1,6 @@
 # imports
-from calendar import c
 import math
-import json
-import numpy as np
+from tkinter import SEL
 from managers.texture import Textures
 from managers.animation import AnimManager
 from managers.map import MapLoader
@@ -81,10 +79,11 @@ class Screen(pygame.Surface):
         self.gauge_x = self.gauge_padding
         self.gauge_y = self.height - self.textures.gui['gauge']['background'].get_height() - self.gauge_padding
         self.speedometer_rect = pygame.Rect(self.gauge_x, self.gauge_y, self.textures.gui['gauge']['background'].get_width(), self.textures.gui['gauge']['background'].get_height())
+        self.steerometer_rect = pygame.Rect(self.gauge_x + self.textures.gui['gauge']['background'].get_width() + self.gauge_padding, self.gauge_y, self.textures.gui['gauge']['background'].get_width(), self.textures.gui['gauge']['background'].get_height())
         
         # Controller properties
         self.joystick = None
-        if pygame.joystick.get_count() is not 0:        # If there are more than 0 controllers connected
+        if pygame.joystick.get_count() != 0:        # If there are more than 0 controllers connected
             self.joystick = pygame.joystick.Joystick(0) # Use the first one that is
             self.joystick.init()
 
@@ -142,23 +141,23 @@ class Screen(pygame.Surface):
         
             if self.current_tile == '#':                
                 self.skid_manager.SKID_COL = (15, 20, 25)
-                material_friction = self.ROAD_FRICTION
+                self.material_friction = self.ROAD_FRICTION
                 self.TOP_MOM = self.ROAD_SPEED
             elif self.current_tile == '@':
                 self.skid_manager.SKID_COL = (50, 40, 40)
-                material_friction = self.DIRT_FRICTION
+                self.material_friction = self.DIRT_FRICTION
                 self.TOP_MOM = self.DIRT_SPEED
             elif self.current_tile == '.':
                 self.skid_manager.SKID_COL = (65, 65, 45)
-                material_friction = self.GRASS_FRICTION
+                self.material_friction = self.GRASS_FRICTION
                 self.TOP_MOM = self.GRASS_SPEED
             else:   # Anything else, it's gotta be water
                 self.skid_manager.SKID_COL = (190, 190, 190)
-                material_friction = self.WATER_FRICTION
+                self.material_friction = self.WATER_FRICTION
                 self.TOP_MOM = self.WATER_SPEED
         
         except IndexError:                              # Travelled out of bounds
-            material_friction = self.GRASS_FRICTION      # Set the material stats to the default road
+            self.material_friction = self.GRASS_FRICTION      # Set the material stats to the default road
             self.TOP_MOM = self.GRASS_SPEED
 
         # Controller event listener
@@ -177,7 +176,7 @@ class Screen(pygame.Surface):
             if abs(x_axis) > config['DEADZONE'] and self.CAR_SPEED > 0.5:
                 self.CAR_ANGLE += x_axis * 2.6
                 if self.DRIFT_ANGLE < self.MAX_DRIFT_ANGLE:
-                    self.DRIFT_ANGLE -= x_axis * material_friction
+                    self.DRIFT_ANGLE -= x_axis * self.material_friction
             else:
                 if self.DRIFT_ANGLE > 0:
                     self.DRIFT_ANGLE -= 1.0
@@ -201,21 +200,21 @@ class Screen(pygame.Surface):
                     self.DRIFT_ANGLE += config['DRIFT_CORRECT']
                 else:
                     if self.DRIFT_ANGLE < self.MAX_DRIFT_ANGLE:
-                        self.DRIFT_ANGLE += config['DRIFT_INCR'] * material_friction
+                        self.DRIFT_ANGLE += config['DRIFT_INCR'] * self.material_friction
             elif keys[pygame.K_d] and self.CAR_SPEED > 0.5:
                 self.CAR_ANGLE += config['STEER_ANG']
                 if self.DRIFT_ANGLE > 0:
                     self.DRIFT_ANGLE -= config['DRIFT_CORRECT']
                 else:
                     if self.DRIFT_ANGLE > -self.MAX_DRIFT_ANGLE:
-                        self.DRIFT_ANGLE -= config['DRIFT_INCR'] * material_friction
+                        self.DRIFT_ANGLE -= config['DRIFT_INCR'] * self.material_friction
             else:
                 if self.DRIFT_ANGLE > 0:
                     self.DRIFT_ANGLE -= 1.0
                 elif self.DRIFT_ANGLE < 0:
                     self.DRIFT_ANGLE += 1.0
 
-            if keys[pygame.K_w] and self.CAR_SPEED < self.TOP_MOM and self.current_tile != 'O':
+            if keys[pygame.K_w] and self.CAR_SPEED < self.TOP_MOM:
                 self.CAR_SPEED += self.THROTTLE_MUL
             if keys[pygame.K_s]:
                 self.CAR_SPEED -= (self.THROTTLE_MUL * 0.5)
@@ -264,8 +263,9 @@ class Screen(pygame.Surface):
         new_y += drift_y
 
         # Check for screen boundary collisions
-        self.CAR_X = new_x
-        self.CAR_Y = new_y
+        if self.map.LAYOUT[int(new_y // self.tile_height)][int(new_x // self.tile_width)] not in ('O', ','):
+            self.CAR_X = new_x
+            self.CAR_Y = new_y
         
         self.camera_x = self.CAR_X - self.width / 2
         self.camera_y = self.CAR_Y - self.height / 2
@@ -320,6 +320,7 @@ class Screen(pygame.Surface):
         
         self.draw_fps()
         self.draw_speedometer()
+        self.draw_steerometer()
 
     def draw_tiles(self):
         
@@ -408,6 +409,35 @@ class Screen(pygame.Surface):
         needle_y = self.speedometer_rect.centery - rotated_needle.get_height() // 2
         raw_needle_x = self.speedometer_rect.centerx - rotated_raw_needle.get_width() // 2
         raw_needle_y = self.speedometer_rect.centery - rotated_raw_needle.get_height() // 2
+        needle_position = (needle_x, needle_y)
+        raw_needle_position = (raw_needle_x, raw_needle_y)
+
+        # Draw the rotated needle
+        self.screen.blit(rotated_needle, needle_position)
+        self.screen.blit(rotated_raw_needle, raw_needle_position)
+
+    def draw_steerometer(self):
+        # Gauge the Gauge Textures
+        self.screen.blit(self.textures.gui['gauge']['background'], self.steerometer_rect.topleft)
+
+        # Calculate the angle for the speedometer needle based on car speed
+        min_angle = 0
+        max_angle = 360
+        current_angle = self.CAR_ANGLE % 360 - 90
+        drift_angle = min(max_angle, self.CAR_ANGLE % 360 - 90 + (-self.DRIFT_ANGLE * self.material_friction) * 0.25)
+        angle_range = max_angle - min_angle
+        angle = min_angle - (current_angle / max_angle) * angle_range
+        raw_angle = (min_angle - (drift_angle / max_angle) * angle_range)
+
+        # Create a rotated needle image
+        rotated_needle = pygame.transform.rotate(self.textures.gui['gauge']['speed_needle'], angle)
+        rotated_raw_needle = pygame.transform.rotate(self.textures.gui['gauge']['vector_needle'], raw_angle)
+
+        # Calculate the position for the needle
+        needle_x = self.steerometer_rect.centerx - rotated_needle.get_width() // 2
+        needle_y = self.steerometer_rect.centery - rotated_needle.get_height() // 2
+        raw_needle_x = self.steerometer_rect.centerx - rotated_raw_needle.get_width() // 2
+        raw_needle_y = self.steerometer_rect.centery - rotated_raw_needle.get_height() // 2
         needle_position = (needle_x, needle_y)
         raw_needle_position = (raw_needle_x, raw_needle_y)
 
