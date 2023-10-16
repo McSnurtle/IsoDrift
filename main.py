@@ -51,10 +51,13 @@ class SkidManager:
 
 class Screen(pygame.Surface):
     
-    def __init__(self, width, height):
+    def __init__(self, width: int | None=None, height: int | None=None):
     
-        super().__init__((width, height))
-        self.width, self.height = width, height
+        if width and height:
+            self.width, self.height = width, height
+        else:
+            self.width, self.height = config['WIDTH'], config['HEIGHT']
+        super().__init__((self.width, self.height))
         self.clock = pygame.time.Clock()
         self.running = True
         self.screen = pygame.display.set_mode((self.width, self.height))
@@ -68,13 +71,13 @@ class Screen(pygame.Surface):
         # Map Properties
         self.map = MapLoader('dirty_dancing')
         self.distance_map = None
-        self.perspective = 55
+        self.perspective = config['SQUASH']
         self.tile_width = 90
         self.current_tile = None
         self.tile_height = self.perspective
 
         # Gauge properties
-        self.gauge_padding = 20
+        self.gauge_padding = config['PADDING']
         self.gauge_x = self.gauge_padding
         self.gauge_y = self.height - self.textures.gui['gauge']['background'].get_height() - self.gauge_padding
         self.speedometer_rect = pygame.Rect(self.gauge_x, self.gauge_y, self.textures.gui['gauge']['background'].get_width(), self.textures.gui['gauge']['background'].get_height())
@@ -96,13 +99,13 @@ class Screen(pygame.Surface):
         self.MOM_DECAY = 0.0245
         self.TOP_MOM = 7.0
         self.CAR_DIRECTION = 'car-e'
-        self.THROTTLE_MUL = 0.155
+        self.THROTTLE_MUL = config['THROTTLE_MUL']
         self.STEER_THRESH = 230.0
         self.CAR_WIDTH, self.CAR_HEIGHT = self.car_mirror.get_size()
 
         # Drift properties
         self.DRIFT_ANGLE = 0
-        self.DRIFT_MUL = 0.06
+        self.DRIFT_MUL = config['DRIFT_MUL']
         self.DRIFT_THRESH = 2.0
         self.MAX_DRIFT_ANGLE = 90.0
 
@@ -171,7 +174,7 @@ class Screen(pygame.Surface):
             lt_axis = self.joystick.get_axis(4)
             rt_axis = self.joystick.get_axis(5)            
 
-            if abs(x_axis) > 0.2 and self.CAR_SPEED > 0.5:
+            if abs(x_axis) > config['DEADZONE'] and self.CAR_SPEED > 0.5:
                 self.CAR_ANGLE += x_axis * 2.6
                 if self.DRIFT_ANGLE < self.MAX_DRIFT_ANGLE:
                     self.DRIFT_ANGLE -= x_axis * material_friction
@@ -181,10 +184,10 @@ class Screen(pygame.Surface):
                 elif self.DRIFT_ANGLE < 0:
                     self.DRIFT_ANGLE += 1.0
                         
-            if (lt_axis + 1.0 / 2.0) > 0.2:
-                self.CAR_SPEED -= (lt_axis + 1.0) / 15.0
-            if (rt_axis + 1.0 / 2.0) > 0.2 and self.CAR_SPEED < self.TOP_MOM:
-                self.CAR_SPEED += (rt_axis + 1.0) / 12.0
+            if (lt_axis + 1.0 / 2.0) > config['TRIG_DEAD']:
+                self.CAR_SPEED -= (lt_axis + 1.0) / config['BRAKE_AMP']
+            if (rt_axis + 1.0 / 2.0) > config['TRIG_DEAD'] and self.CAR_SPEED < self.TOP_MOM:
+                self.CAR_SPEED += (rt_axis + 1.0) / config['THROTTLE_AMP']
             else:
                 self.CAR_SPEED -= self.MOM_DECAY * 5.0
 
@@ -193,19 +196,19 @@ class Screen(pygame.Surface):
             keys = pygame.key.get_pressed()
 
             if keys[pygame.K_a] and self.CAR_SPEED > 0.5:
-                self.CAR_ANGLE -= 3
+                self.CAR_ANGLE -= config['STEER_ANG']
                 if self.DRIFT_ANGLE < 0:
-                    self.DRIFT_ANGLE += 5.0
+                    self.DRIFT_ANGLE += config['DRIFT_CORRECT']
                 else:
                     if self.DRIFT_ANGLE < self.MAX_DRIFT_ANGLE:
-                        self.DRIFT_ANGLE += 1.0 * material_friction
+                        self.DRIFT_ANGLE += config['DRIFT_INCR'] * material_friction
             elif keys[pygame.K_d] and self.CAR_SPEED > 0.5:
-                self.CAR_ANGLE += 3
+                self.CAR_ANGLE += config['STEER_ANG']
                 if self.DRIFT_ANGLE > 0:
-                    self.DRIFT_ANGLE -= 5.0
+                    self.DRIFT_ANGLE -= config['DRIFT_CORRECT']
                 else:
                     if self.DRIFT_ANGLE > -self.MAX_DRIFT_ANGLE:
-                        self.DRIFT_ANGLE -= 1.0 * material_friction
+                        self.DRIFT_ANGLE -= config['DRIFT_INCR'] * material_friction
             else:
                 if self.DRIFT_ANGLE > 0:
                     self.DRIFT_ANGLE -= 1.0
@@ -418,9 +421,30 @@ class Screen(pygame.Surface):
         fps_rect = fps_text.get_rect()
         fps_rect.topright = (self.width - 10, 10)
         self.screen.blit(fps_text, fps_rect)
-        
 
-if __name__ == '__main__':
-    screen = Screen(2560//2, 1440//2)
 
+if __name__ == '__main__':  
+    config = {}
+
+    with open('settings.conf', 'r') as file:
+        for line in file:
+            line = line.strip()  # Remove leading and trailing whitespace
+            if line and not line.startswith('#'):
+                # Split the line at the first '#' character
+                parts = line.split('#', 1)
+                variable = parts[0].strip()  # Get the part before '#' and strip extra whitespace
+                value = variable.split('=')[0].strip(), variable.split('=')[1].strip()  # Split variable name and value
+                if len(value) == 2:
+                    variable_name, variable_value = value
+                    if variable_value.replace(".", "", 1).isdigit():  # Check for floats
+                        if "." in variable_value:
+                            config[variable_name] = float(variable_value)
+                        else:
+                            config[variable_name] = int(variable_value)
+                    else:
+                        config[variable_name] = variable_value
+
+    print(config)
+
+    screen = Screen()
     screen.run()
