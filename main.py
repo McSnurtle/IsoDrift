@@ -49,7 +49,7 @@ class SkidManager:
 
 class Screen(pygame.Surface):
     
-    def __init__(self, width: int | None=None, height: int | None=None):
+    def __init__(self, width: any=None, height: any=None):
     
         if width and height:
             self.width, self.height = width, height
@@ -101,6 +101,7 @@ class Screen(pygame.Surface):
         self.THROTTLE_MUL = config['THROTTLE_MUL']
         self.STEER_THRESH = 230.0
         self.CAR_WIDTH, self.CAR_HEIGHT = self.car_mirror.get_size()
+        print(self.CAR_WIDTH, self.CAR_HEIGHT)
 
         # Drift properties
         self.DRIFT_ANGLE = 0
@@ -263,7 +264,7 @@ class Screen(pygame.Surface):
         new_y += drift_y
 
         # Check for screen boundary collisions
-        if self.map.LAYOUT[int(new_y // self.tile_height)][int(new_x // self.tile_width)] not in ('O', ','):
+        if self.map.LAYOUT[int(new_y // self.tile_height)][int(new_x // self.tile_width)] not in ('O', ',') and 1 < new_x - self.CAR_WIDTH < len(self.map.LAYOUT[0]) * self.tile_width + (self.CAR_WIDTH * 2) and 1 < new_y - self.CAR_HEIGHT < len(self.map.LAYOUT) * self.tile_height - (self.CAR_HEIGHT * 2):
             self.CAR_X = new_x
             self.CAR_Y = new_y
         
